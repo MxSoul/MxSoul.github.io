@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>一篇文章读懂Retrofit2.0，Retrofit2.0更新分析.md—C:\Users\SouL\Desktop</title>
+    <style type="text/css">
+    html{font-family: sans-serif;-ms-text-size-adjust: 100%;-webkit-text-size-adjust: 100%}body{margin: 0}article,aside,details,figcaption,figure,footer,header,hgroup,main,nav,section,summary{display: block}audio,canvas,progress,video{display: inline-block;vertical-align: baseline}audio:not([controls]){display: none;height: 0}[hidden],template{display: none}a{background: transparent}a:active,a:hover{outline: 0}abbr[title]{border-bottom: 1px dotted}b,strong{font-weight: bold}dfn{font-style: italic}h1{font-size: 2em;margin: 0.67em 0}mark{background: #ff0;color: #000}small{font-size: 80%}sub,sup{font-size: 75%;line-height: 0;position: relative;vertical-align: baseline}sup{top: -0.5em}sub{bottom: -0.25em}img{border: 0}svg:not(:root){overflow: hidden}figure{margin: 1em 40px}hr{box-sizing: content-box;height: 0}pre{overflow: auto}code,kbd,pre,samp{font-family: monospace, monospace;font-size: 1em}button,input,optgroup,select,textarea{color: inherit;font: inherit;margin: 0}button{overflow: visible}button,select{text-transform: none}button,html input[type="button"],input[type="reset"],input[type="submit"]{-webkit-appearance: button;cursor: pointer}button[disabled],html input[disabled]{cursor: default}button::-moz-focus-inner,input::-moz-focus-inner{border: 0;padding: 0}input{line-height: normal}input[type="checkbox"],input[type="radio"]{box-sizing: border-box;padding: 0}input[type="number"]::-webkit-inner-spin-button,input[type="number"]::-webkit-outer-spin-button{height: auto}input[type="search"]{-webkit-appearance: textfield;box-sizing: content-box}input[type="search"]::-webkit-search-cancel-button,input[type="search"]::-webkit-search-decoration{-webkit-appearance: none}fieldset{border: 1px solid #c0c0c0;margin: 0 2px;padding: 0.35em 0.625em 0.75em}legend{border: 0;padding: 0}textarea{overflow: auto}optgroup{font-weight: bold}table{border-collapse: collapse;border-spacing: 0}td,th{padding: 0}*{box-sizing: border-box}input,select,textarea,button{font: 13px/1.4 Helvetica, arial, freesans, clean, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol"}body{min-width: 1020px;font: 13px/1.4 Helvetica, arial, freesans, clean, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol";color: #333;background-color: #fff}a{color: #4183c4;text-decoration: none}a:hover,a:active{text-decoration: underline}hr,.rule{height: 0;margin: 15px 0;overflow: hidden;background: transparent;border: 0;border-bottom: 1px solid #ddd}hr:before,.rule:before{display: table;content: ""}hr:after,.rule:after{display: table;clear: both;content: ""}h1,h2,h3,h4,h5,h6{margin-top: 15px;margin-bottom: 15px;line-height: 1.1}h1{font-size: 30px}h2{font-size: 21px}h3{font-size: 16px}h4{font-size: 14px}h5{font-size: 12px}h6{font-size: 11px}small{font-size: 90%}blockquote{margin: 0}.lead{margin-bottom: 30px;font-size: 20px;font-weight: 300;color: #555}.text-muted{color: #999}.text-danger{color: #bd2c00}.text-emphasized{font-weight: bold;color: #333}ul,ol{padding: 0;margin-top: 0;margin-bottom: 0}ol ol,ul ol{list-style-type: lower-roman}ul ul ol,ul ol ol,ol ul ol,ol ol ol{list-style-type: lower-alpha}dd{margin-left: 0}tt,code{font-family: Consolas, "Liberation Mono", Menlo, Courier, monospace;font-size: 12px}pre{margin-top: 0;margin-bottom: 0;font: 12px Consolas, "Liberation Mono", Menlo, Courier, monospace}#realtime .status{overflow: visible;position: absolute;top: -5px;left: 0;background: url("/public/images/github-status.png");width: 26px;height: 26px;display: block;margin: 0 5px 0 0}#realtime .up{background-position: 0 0}#realtime .problem{background-position: 0 -53px}#realtime .down{background-position: 0 -26px}.container{max-width: 920px;margin: 0 auto 20px auto}#header{background: #FAFAFA;background: -moz-linear-gradient(#FAFAFA, #EAEAEA);background: -webkit-linear-gradient(#FAFAFA, #EAEAEA);-ms-filter: "progid:DXImageTransform.Microsoft.gradient(startColorstr='#fafafa', endColorstr='#eaeaea')";border-bottom: 1px solid #CACACA;box-shadow: 0 1px 0 rgba(255, 255, 255, 0.4),0 0 10px rgba(0, 0, 0, 0.1)}#markup{padding: 3px}#markup article{padding-top: 30px}.markdown-body{overflow: hidden;font-family: "Helvetica Neue", Helvetica, "Segoe UI", Arial, freesans, sans-serif;font-size: 16px;line-height: 1.6;word-wrap: break-word}.markdown-body>*:first-child{margin-top: 0 !important}.markdown-body>*:last-child{margin-bottom: 0 !important}.markdown-body .absent{color: #c00}.markdown-body .anchor{position: absolute;top: 0;left: 0;display: block;padding-right: 6px;padding-left: 30px;margin-left: -30px}.markdown-body .anchor:focus{outline: none}.markdown-body h1,.markdown-body h2,.markdown-body h3,.markdown-body h4,.markdown-body h5,.markdown-body h6{position: relative;margin-top: 1em;margin-bottom: 16px;font-weight: bold;line-height: 1.4}.markdown-body h1 .octicon-link,.markdown-body h2 .octicon-link,.markdown-body h3 .octicon-link,.markdown-body h4 .octicon-link,.markdown-body h5 .octicon-link,.markdown-body h6 .octicon-link{display: none;color: #000;vertical-align: middle}.markdown-body h1:hover .anchor,.markdown-body h2:hover .anchor,.markdown-body h3:hover .anchor,.markdown-body h4:hover .anchor,.markdown-body h5:hover .anchor,.markdown-body h6:hover .anchor{padding-left: 8px;margin-left: -30px;text-decoration: none}.markdown-body h1:hover .anchor .octicon-link,.markdown-body h2:hover .anchor .octicon-link,.markdown-body h3:hover .anchor .octicon-link,.markdown-body h4:hover .anchor .octicon-link,.markdown-body h5:hover .anchor .octicon-link,.markdown-body h6:hover .anchor .octicon-link{display: inline-block}.markdown-body h1 tt,.markdown-body h1 code,.markdown-body h2 tt,.markdown-body h2 code,.markdown-body h3 tt,.markdown-body h3 code,.markdown-body h4 tt,.markdown-body h4 code,.markdown-body h5 tt,.markdown-body h5 code,.markdown-body h6 tt,.markdown-body h6 code{font-size: inherit}.markdown-body h1{padding-bottom: 0.3em;font-size: 2.25em;line-height: 1.2;border-bottom: 1px solid #eee}.markdown-body h1 .anchor{line-height: 1}.markdown-body h2{padding-bottom: 0.3em;font-size: 1.75em;line-height: 1.225;border-bottom: 1px solid #eee}.markdown-body h2 .anchor{line-height: 1}.markdown-body h3{font-size: 1.5em;line-height: 1.43}.markdown-body h3 .anchor{line-height: 1.2}.markdown-body h4{font-size: 1.25em}.markdown-body h4 .anchor{line-height: 1.2}.markdown-body h5{font-size: 1em}.markdown-body h5 .anchor{line-height: 1.1}.markdown-body h6{font-size: 1em;color: #777}.markdown-body h6 .anchor{line-height: 1.1}.markdown-body p,.markdown-body blockquote,.markdown-body ul,.markdown-body ol,.markdown-body dl,.markdown-body table,.markdown-body pre{margin-top: 0;margin-bottom: 16px}.markdown-body hr{height: 4px;padding: 0;margin: 16px 0;background-color: #e7e7e7;border: 0 none}.markdown-body ul,.markdown-body ol{padding-left: 2em}.markdown-body ul.no-list,.markdown-body ol.no-list{padding: 0;list-style-type: none}.markdown-body ul ul,.markdown-body ul ol,.markdown-body ol ol,.markdown-body ol ul{margin-top: 0;margin-bottom: 0}.markdown-body li>p{margin-top: 16px}.markdown-body dl{padding: 0}.markdown-body dl dt{padding: 0;margin-top: 16px;font-size: 1em;font-style: italic;font-weight: bold}.markdown-body dl dd{padding: 0 16px;margin-bottom: 16px}.markdown-body blockquote{padding: 0 15px;color: #777;border-left: 4px solid #ddd}.markdown-body blockquote>:first-child{margin-top: 0}.markdown-body blockquote>:last-child{margin-bottom: 0}.markdown-body table{display: block;width: 100%;overflow: auto;word-break: normal;word-break: keep-all}.markdown-body table th{font-weight: bold}.markdown-body table th,.markdown-body table td{padding: 6px 13px;border: 1px solid #ddd}.markdown-body table tr{background-color: #fff;border-top: 1px solid #ccc}.markdown-body table tr:nth-child(2n){background-color: #f8f8f8}.markdown-body img{max-width: 100%;box-sizing: border-box}.markdown-body span.frame{display: block;overflow: hidden}.markdown-body span.frame>span{display: block;float: left;width: auto;padding: 7px;margin: 13px 0 0;overflow: hidden;border: 1px solid #ddd}.markdown-body span.frame span img{display: block;float: left}.markdown-body span.frame span span{display: block;padding: 5px 0 0;clear: both;color: #333}.markdown-body span.align-center{display: block;overflow: hidden;clear: both}.markdown-body span.align-center>span{display: block;margin: 13px auto 0;overflow: hidden;text-align: center}.markdown-body span.align-center span img{margin: 0 auto;text-align: center}.markdown-body span.align-right{display: block;overflow: hidden;clear: both}.markdown-body span.align-right>span{display: block;margin: 13px 0 0;overflow: hidden;text-align: right}.markdown-body span.align-right span img{margin: 0;text-align: right}.markdown-body span.float-left{display: block;float: left;margin-right: 13px;overflow: hidden}.markdown-body span.float-left span{margin: 13px 0 0}.markdown-body span.float-right{display: block;float: right;margin-left: 13px;overflow: hidden}.markdown-body span.float-right>span{display: block;margin: 13px auto 0;overflow: hidden;text-align: right}.markdown-body code,.markdown-body tt{padding: 0;padding-top: 0.2em;padding-bottom: 0.2em;margin: 0;font-size: 85%;background-color: rgba(0,0,0,0.04);border-radius: 3px}.markdown-body code:before,.markdown-body code:after,.markdown-body tt:before,.markdown-body tt:after{letter-spacing: -0.2em;content: "\00a0"}.markdown-body code br,.markdown-body tt br{display: none}.markdown-body del code{text-decoration: inherit}.markdown-body pre>code{padding: 0;margin: 0;font-size: 100%;word-break: normal;white-space: pre;background: transparent;border: 0}.markdown-body .highlight{margin-bottom: 16px}.markdown-body .highlight pre,.markdown-body pre{padding: 16px;overflow: auto;font-size: 85%;line-height: 1.45;background-color: #f7f7f7;border-radius: 3px}.markdown-body .highlight pre{margin-bottom: 0;word-break: normal}.markdown-body pre{word-wrap: normal}.markdown-body pre code,.markdown-body pre tt{display: inline;max-width: initial;padding: 0;margin: 0;overflow: initial;line-height: inherit;word-wrap: normal;background-color: transparent;border: 0}.markdown-body pre code:before,.markdown-body pre code:after,.markdown-body pre tt:before,.markdown-body pre tt:after{content: normal}.markdown-body kbd{display: inline-block;padding: 3px 5px;font-size: 11px;line-height: 10px;color: #555;vertical-align: middle;background-color: #fcfcfc;border: solid 1px #ccc;border-bottom-color: #bbb;border-radius: 3px;box-shadow: inset 0 -1px 0 #bbb}.codehilite{background: #ffffff}.codehilite .c{color: #999988;font-style: italic}.codehilite .err{color: #a61717;background-color: #e3d2d2}.codehilite .k{color: #000000;font-weight: bold}.codehilite .o{color: #000000;font-weight: bold}.codehilite .cm{color: #999988;font-style: italic}.codehilite .cp{color: #999999;font-weight: bold}.codehilite .c1{color: #999988;font-style: italic}.codehilite .cs{color: #999999;font-weight: bold;font-style: italic}.codehilite .gd{color: #000000;background-color: #ffdddd}.codehilite .gd .x{color: #000000;background-color: #ffaaaa}.codehilite .ge{color: #000000;font-style: italic}.codehilite .gr{color: #aa0000}.codehilite .gh{color: #999999}.codehilite .gi{color: #000000;background-color: #ddffdd}.codehilite .gi .x{color: #000000;background-color: #aaffaa}.codehilite .go{color: #888888}.codehilite .gp{color: #555555}.codehilite .gs{font-weight: bold}.codehilite .gu{color: #aaaaaa}.codehilite .gt{color: #aa0000}.codehilite .kc{color: #000000;font-weight: bold}.codehilite .kd{color: #000000;font-weight: bold}.codehilite .kp{color: #000000;font-weight: bold}.codehilite .kr{color: #000000;font-weight: bold}.codehilite .kt{color: #445588;font-weight: bold}.codehilite .m{color: #009999}.codehilite .s{color: #d14}.codehilite .na{color: #008080}.codehilite .nb{color: #0086B3}.codehilite .nc{color: #445588;font-weight: bold}.codehilite .no{color: #008080}.codehilite .ni{color: #800080}.codehilite .ne{color: #990000;font-weight: bold}.codehilite .nf{color: #990000;font-weight: bold}.codehilite .nn{color: #555555}.codehilite .nt{color: #000080}.codehilite .nv{color: #008080}.codehilite .ow{color: #000000;font-weight: bold}.codehilite .w{color: #bbbbbb}.codehilite .mf{color: #009999}.codehilite .mh{color: #009999}.codehilite .mi{color: #009999}.codehilite .mo{color: #009999}.codehilite .sb{color: #d14}.codehilite .sc{color: #d14}.codehilite .sd{color: #d14}.codehilite .s2{color: #d14}.codehilite .se{color: #d14}.codehilite .sh{color: #d14}.codehilite .si{color: #d14}.codehilite .sx{color: #d14}.codehilite .sr{color: #009926}.codehilite .s1{color: #d14}.codehilite .ss{color: #990073}.codehilite .bp{color: #999999}.codehilite .vc{color: #008080}.codehilite .vg{color: #008080}.codehilite .vi{color: #008080}.codehilite .il{color: #009999}
+    </style>
+    <style type="text/css">
+      .markdown-body hr{background:url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAYAAAAECAYAAACtBE5DAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyJpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuMC1jMDYwIDYxLjEzNDc3NywgMjAxMC8wMi8xMi0xNzozMjowMCAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENTNSBNYWNpbnRvc2giIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6OENDRjNBN0E2NTZBMTFFMEI3QjRBODM4NzJDMjlGNDgiIHhtcE1NOkRvY3VtZW50SUQ9InhtcC5kaWQ6OENDRjNBN0I2NTZBMTFFMEI3QjRBODM4NzJDMjlGNDgiPiA8eG1wTU06RGVyaXZlZEZyb20gc3RSZWY6aW5zdGFuY2VJRD0ieG1wLmlpZDo4Q0NGM0E3ODY1NkExMUUwQjdCNEE4Mzg3MkMyOUY0OCIgc3RSZWY6ZG9jdW1lbnRJRD0ieG1wLmRpZDo4Q0NGM0E3OTY1NkExMUUwQjdCNEE4Mzg3MkMyOUY0OCIvPiA8L3JkZjpEZXNjcmlwdGlvbj4gPC9yZGY6UkRGPiA8L3g6eG1wbWV0YT4gPD94cGFja2V0IGVuZD0iciI/PqqezsUAAAAfSURBVHjaYmRABcYwBiM2QSA4y4hNEKYDQxAEAAIMAHNGAzhkPOlYAAAAAElFTkSuQmCC")}
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div id="markup">
+        <article id="content" class="markdown-body">
+          <h1 id="retrofit20retrofit20">一篇文章读懂Retrofit2.0，Retrofit2.0更新分析</h1>
+<blockquote>
+<p>该文章为，国外博客的翻译，英文比较烂（主要靠Google），可能有很多翻译得不到位的地方，主要还是想给自己做一个笔记。</p>
+<p>原文连接
+<a href="https://inthecheesefactory.com/blog/retrofit-2.0/en">https://inthecheesefactory.com/blog/retrofit-2.0/en</a></p>
+</blockquote>
+<p>由于其简单性和与其他网络框架相比的卓越性能，Retrofit是Android的最流行的HTTP客户端库之一。
+<br/></p>
+<p>无论如何，它的弱点是在Retrofit 1.x中，没有任何直接的方式取消正在进行的网络请求。如果你想这样做，你必须在Thread上调用它，并手动杀死该Thread，这是一种很难管理的方式。</p>
+<p>Square几年前承诺，此功能将在Retrofit 2.0上推出，但过去几年，仍然没有更新的新闻。</p>
+<p>直到上周（译者注：该博客发表时间为 2015-11-06 12:33），Retrofit 2.0才刚刚通过了Beta 1的发布阶段，并已被公开发布给大家。尝试之后，我必须说，我对它的新模式和新功能印象深刻。有很多往好的方向的变化。我将在本文中描述。让我们开始吧 ！</p>
+<h3 id="_1">新版本导入`</h3>
+<p>如果要将Retrofit 2.0导入到项目中，请将此行添加到你 <code>build.gradle</code>的<code>dependencies</code>部分。</p>
+<div class="codehilite"><pre>compile &#39;com.squareup.retrofit2:retrofit:2.0.0-beta4&#39;
+
+截至2017-10-3 最新版为：
+compile &#39;com.squareup.retrofit2:retrofit:2.3.0&#39;
+</pre></div>
+
+
+<p>同步你的 gradle 文件，你现在就可以使用Retrofit 2.0了  =）</p>
+<p>正如你所看到的，Retrofit 2包名称与以前的版本不同。现在是  <code>com.squareup.retrofit2</code>
+<br/></p>
+<h3 id="service">新的Service声明方式，同步和异步方法不再被区分。</h3>
+<p>关于Retrofit 1.9中的Service接口声明，如果要声明一个同步请求，则必须像这样声明：</p>
+<div class="codehilite"><pre>/* Synchronous in Retrofit 1.9 */
+
+public interface APIService {
+      @POST(&quot;/list&quot;) 
+      Repo loadRepo();
+}
+</pre></div>
+
+
+<p>如果你需要一个异步请求，如下所示：</p>
+<div class="codehilite"><pre>/* Asynchronous in Retrofit 1.9 */
+
+public interface APIService {
+      @POST(&quot;/list&quot;)
+      void loadRepo(Callback&lt;Repo&gt; cb);
+}
+</pre></div>
+
+
+<p>但是在<strong>Retrofit 2.0</strong>中，它更简单，因为你只能使用单个模式进行声明。</p>
+<div class="codehilite"><pre>import retrofit.Call;
+
+/* Retrofit 2.0 */
+
+public interface APIService {
+      @POST(&quot;/list&quot;)
+      Call&lt;Repo&gt; loadRepo();
+}
+</pre></div>
+
+
+<p>调用创建Service的方式也改变为与<a href="http://square.github.io/okhttp/">OkHttp</a>相同的模式。
+要调用是同步请求，只需调用<code>execute</code>
+要调用是同步请求，只需调用<code>enqueue</code></p>
+<p><strong>同步请求</strong></p>
+<div class="codehilite"><pre>// Synchronous Call in Retrofit 2.0
+Call&lt;Repo&gt; call = service.loadRepo();
+Repo repo = call.execute();
+</pre></div>
+
+
+<p>上面的源代码将阻塞线程，所以你不能在Android的主线程中调用它，否则你将面临<code>NetworkOnMainThreadException</code>。如果你想调用<code>execute</code>方法，你必须在后台线程上执行。</p>
+<p><strong>异步请求</strong></p>
+<div class="codehilite"><pre>// Asynchronous Call in Retrofit 2.0
+
+Call&lt;Repo&gt; call = service.loadRepo();
+call.enqueue(new Callback&lt;Repo&gt;() { 
+      @Override
+      public void onResponse(Response&lt;Repo&gt; response) {
+            // Get result Repo from response.body()
+      }
+
+      @Override
+      public void onFailure(Throwable t) {
+
+      }
+});
+</pre></div>
+
+
+<p>上述代码将在后台线程中发出请求，并将结果以Object的形式取回，你可以通过<code>response.body()</code>方法从response中提取结果。</p>
+<p>请注意：<code>onResponse</code>和<code>onFailure</code>将会在<strong>主线程</strong>中调用。</p>
+<p>我建议你使用<code>enqueue</code>，因为它最适合Android。</p>
+<h3 id="_2">取消正在进行的事务</h3>
+<p>Service声明方式转变<code>Call</code>的原因，是使得正在进行的事务能够被取消。若要取消事务，只需调用<code>call.cancel()</code></p>
+<div class="codehilite"><pre>call.cancel();
+</pre></div>
+
+
+<p>调用该方法之后，事务将会很快的被取消。很轻松吧？= D
+<br/></p>
+<h3 id="serviceconverterretrofit">在新Service的构建中，转换器（Converter）现在被从Retrofit包中去除</h3>
+<p>在Retrofit 1.9中，GsonConverter包含在包中，并在<code>RestAdapter</code>创建时自动初始化。因此，服务器返回的json将自动解析为定义的 数据访问对象  （DAO）。</p>
+<p>但在Retrofit 2.0中，转换器（Converter）<strong>不再</strong>包含在包中。你需要自己添加一个转换器（Converter），否则Retrofit将只能接受String的结果。因此，Retrofit 2.0不再依赖于Gson。</p>
+<p>如果要接受json结果并将其解析成DAO，则必须将Gson Converter作为单独的依赖项。</p>
+<div class="codehilite"><pre>compile &#39;com.squareup.retrofit:converter-gson:2.0.0-beta2&#39;
+</pre></div>
+
+
+<p>并通过<code>addConverterFactory</code>将其添加。请注意，<code>RestAdapter</code>现在也重命名为<code>Retrofit</code>。</p>
+<div class="codehilite"><pre>Retrofit retrofit = new Retrofit.Builder()
+      .baseUrl(&quot;http://api.nuuneoi.com/base/&quot;)
+      .addConverterFactory(GsonConverterFactory.create())
+      .build();
+
+service = retrofit.create(APIService.class);
+</pre></div>
+
+
+<p>以下是Square提供的官方转换器（Converter）模块列表。可以从中选择一个最适合你要求的。</p>
+<p><strong>Gson：</strong> com.squareup.retrofit：converter-gson 
+<strong>Jackson：</strong> com.squareup.retrofit：converter-jackson 
+<strong>Moshi：</strong> com.squareup.retrofit：converter-moshi 
+<strong>Protobuf：</strong> com.squareup.retrofit：converter-protobuf 
+<strong>Wire：</strong> com.squareup.retrofit:converter-wire
+<strong>Simple XML：</strong> com.squareup.retrofit：converter-simplexml</p>
+<p>你还可以通过实现<a href="https://github.com/square/retrofit/blob/master/retrofit/src/main/java/retrofit/Converter.java">Converter.Factory</a>接口，创建一个自定义转换器（Converter）。</p>
+<p>我支持这种新模式。它使得Retrofit更专注于处理网络连接（原文：It makes Retrofit more clear what it actually does.）。</p>
+<h3 id="gson">自定义Gson对象</h3>
+<p>如果你需要在json中调整某些格式，例如Date Format。你可以通过创建一个Gson对象，并将其作为参数传递给 <code>GsonConverterFactory.create()</code></p>
+<div class="codehilite"><pre>        Gson gson = new GsonBuilder()
+                .setDateFormat(&quot;yyyy-MM-dd&#39;T&#39;HH:mm:ssZ&quot;)
+                .create();
+
+        Retrofit retrofit = new Retrofit.Builder()
+                .baseUrl(&quot;http://api.nuuneoi.com/base/&quot;)
+                .addConverterFactory(GsonConverterFactory.create(gson))
+                .build();
+
+        service = retrofit.create(APIService.class);
+</pre></div>
+
+
+<p>完成。
+<br/></p>
+<h3 id="url">新的URL解析方式。与<a href>的相同</h3>
+<p>Retrofit 2.0附带了新的URL解析方式。Base URL 和 @Url 不只是简单地组合在一起，而是以和<code>&lt;a href="..."&gt;</code>相同的方式进行解析。</p>
+<p>请查看下面的示例以进行说明。</p>
+<p><img alt="" src="http://upload-images.jianshu.io/upload_images/4300256-a29282998ea76ce7.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<img alt="" src="http://upload-images.jianshu.io/upload_images/4300256-f229e6158fdfc994.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<img alt="" src="http://upload-images.jianshu.io/upload_images/4300256-895b879caa349621.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+以下是我对Retrofit 2.0中新的URL声明模式的建议：
+- <strong>Base URL</strong>：始终以 <code>/</code> 结尾</p>
+<p>- <strong>@Url</strong>：<strong>不要</strong>以 <code>/</code> 开始</p>
+<p>例如</p>
+<div class="codehilite"><pre>public interface APIService {
+
+      @POST(&quot;user/list&quot;) 
+      Call&lt;Users&gt; loadUsers();
+
+}
+
+public void doSomething() { 
+      Retrofit retrofit = new Retrofit.Builder()
+            .baseUrl(&quot;http://api.nuuneoi.com/base/&quot;)
+            .addConverterFactory(GsonConverterFactory.create()) 
+            .build();
+
+      APIService service = retrofit.create(APIService.class);
+}
+</pre></div>
+
+
+<p>上面代码中的<code>loadUsers()</code>将从<code>http://api.nuuneoi.com/base/user/list</code>获取数据 </p>
+<p>此外，在Retrofit 2.0中，我们还可以在<code>@Url</code>中声明一个完整的URL：</p>
+<div class="codehilite"><pre>public interface APIService {
+
+      @POST(&quot;http://api.nuuneoi.com/special/user/list&quot;)
+      Call&lt;Users&gt; loadSpecialUsers();
+
+}
+</pre></div>
+
+
+<p>在这种情况下，Base URL将被忽略。</p>
+<p>可以看到，URL解析有重大变化。它与以前的版本完全不同。如果要将现有代码升级到Retrofit 2.0，请不要忘记修复这些URL部分的代码。</p>
+<h3 id="okhttp">OkHttp现在为必用的</h3>
+<p>OkHttp在“Retrofit 1.9”中为可选项。如果要让Retrofit使用OkHttp作为HTTP连接接口，那么你必须自己手动将<code>okhttp</code>添加至依赖项。</p>
+<p>但是在Retrofit 2.0中，必须使用OkHttp，并且会自动添加为依赖。下面的代码是从Retrofit 2.0的pom文件中获取的。你没有必要做任何事情。</p>
+<div class="codehilite"><pre>  &lt;dependencies&gt;
+    &lt;dependency&gt;
+      &lt;groupId&gt;com.squareup.okhttp&lt;/groupId&gt;
+      &lt;artifactId&gt;okhttp&lt;/artifactId&gt;
+    &lt;/dependency&gt;
+
+    ...
+  &lt;/dependencies&gt;
+</pre></div>
+
+
+<p>在Retrofit 2.0中自动使用Okhttp作为HTTP接口，目的是使用OkHttp的<code>Call</code>方式，将网络请求变成上文中描述的那样。
+<br/></p>
+<h3 id="onresponse">即使返回值有问题（主要指无法解析），onResponse仍然会被调用</h3>
+<p>在Retrofit 1.9中，如果获取的返回值无法解析到定义好的对象之中，<code>failure</code>将被调用。但是在Retrofit 2.0中，无论返回值是否能够解析，<code>onResponse</code>都会被调用。但是在结果无法解析为Object的情况下，<code>response.body()</code>将返回为null。<strong>注意：不要忘记处理这一种情况</strong>。</p>
+<p>如果返回值有问题，例如404 Not Found。<code>onResponse</code>也将被调用。您可以<code>response.errorBody().string()</code>中检索错误信息</p>
+<p><img alt="" src="http://upload-images.jianshu.io/upload_images/4300256-dd3bca996fac6ecc.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240"></p>
+<p>Response / Failure的逻辑与Retrofit 1.9完全不同。如果你决定将代码升级到Retrofit 2.0，请小心处理这些情况。
+<br/></p>
+<h3 id="internetsecurityexception">缺少INTERNET权限会导致抛出SecurityException异常</h3>
+<p>在Retrofit 1.9中，如果您忘记在<code>AndroidManifest.xml</code>文件中添加 INTERNET
+ 权限。异步请求将立即进入<code>failure</code>的回调函数中，并带着错误信息：<strong>PERMISSION DENIED</strong>。不会额外抛出异常。</p>
+<p>但在Retrofit2.0之中，当你调用<code>call.enqueue</code>或者<code>call.execute</code>时，会立刻抛出<code>SecurityException</code>。如果你没有使用try-catch来处理该情况，很可能导致应用崩溃。</p>
+<p><img alt="" src="http://upload-images.jianshu.io/upload_images/4300256-2df9b98f46919aac.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240"></p>
+<p>这种情况和，当手动调用<code>HttpURLConnection</code>是一样的
+无论如何，这个问题不是一件大事，因为只要把INTERNET权限添加到AndroidManifest.xml之中，这个问题就不存在了。
+<br/></p>
+<h3 id="okhttp_1">使用OkHttp的拦截器</h3>
+<p>在Retrofit 1.9中，您可以使用 <code>RequestInterceptor</code>拦截请求，但是由于HTTP连接层已被移动到 OkHttp，所以在Retrofit 2.0上已经不能这么做了。</p>
+<p>因此，我们必须使用 <strong>OkHttp</strong> 的<code>Interceptor</code>。首先，你必须像这样创建一个<code>OkHttpClient</code>对象并创建一个拦截器</p>
+<div class="codehilite"><pre>OkHttpClient client = new OkHttpClient();
+client.interceptors().add(new Interceptor() {
+      @Override
+      public Response intercept(Chain chain) throws IOException {
+            Response response = chain.proceed(chain.request());
+
+            // Do anything with response here
+
+            return response; 
+      }
+});
+</pre></div>
+
+
+<p>并将创建好的<code>client</code>传入Retrofit的Builder的链式调度之中。</p>
+<div class="codehilite"><pre>Retrofit retrofit = new Retrofit.Builder()
+      .baseUrl(&quot;http://api.nuuneoi.com/base/&quot;)
+      .addConverterFactory(GsonConverterFactory.create())
+      .client(client)
+      .build();
+</pre></div>
+
+
+<p>That's all.</p>
+<p>要了解OkHttp拦截器的更多信息，请浏览 <a href="https://github.com/square/okhttp/wiki/Interceptors">OkHttp拦截器</a>。
+附：感谢<a href="http://www.jianshu.com/u/18fcd0aab3d7">汉之风云</a>的<a href="http://www.jianshu.com/p/2710ed1e6b48">中文翻译版</a>
+<br/></p>
+<h3 id="certificate-pinning">证书锁定(Certificate Pinning)</h3>
+<blockquote>
+<p>相关知识
+<a href="http://blog.csdn.net/ptwh0608/article/details/44155255">移动安全之Certificate Pinning</a></p>
+</blockquote>
+<p>与拦截器一样，如果要使连接应用的证书锁定，也需要先创建OkHttpClient实例。以下是示例代码段。
+首先，定义具有证书锁定信息的OkHttpClient实例：</p>
+<div class="codehilite"><pre>OkHttpClient client = new OkHttpClient.Builder()
+        .certificatePinner(new CertificatePinner.Builder()
+                .add(&quot;publicobject.com&quot;, &quot;sha1/DmxUShsZuNiqPQsX2Oi9uv2sCnw=&quot;)
+                .add(&quot;publicobject.com&quot;, &quot;sha1/SXxoaOSEzPC6BgGmxAt/EAcsajw=&quot;)
+                .add(&quot;publicobject.com&quot;, &quot;sha1/blhOM3W9V/bVQhsWAcLYwPU6n24=&quot;)
+                .add(&quot;publicobject.com&quot;, &quot;sha1/T5x9IXmcrQ7YuQxXnxoCmeeQ84c=&quot;)
+                .build())
+        .build();
+</pre></div>
+
+
+<p>在Retrofit的Builder的链式调度之中，传入刚创建好的 OkhttpClient。</p>
+<div class="codehilite"><pre>Retrofit retrofit = new Retrofit.Builder()
+        .baseUrl(&quot;http://api.nuuneoi.com/base/&quot;)
+        .addConverterFactory(GsonConverterFactory.create())
+        .client(client)
+        .build();
+</pre></div>
+
+
+<p>有关证书锁定的sha1哈希算法的更多信息，Google会帮助你（必应国际版也挺好用）
+<br/></p>
+<h3 id="rxjavacalladapter">RxJava与CallAdapter集成</h3>
+<p>除了以<code>Call&lt;T&gt;</code>的形式声明接口之外，我们也可以声明自己的类型，例如  <code>MyCall&lt;T&gt;</code>。这些方式被称为“ <code>CallAdapter</code>”，它可以在Retrofit 2.0上使用</p>
+<p>有一些可以从Retrofit团队获得的即用型CallAdapter模块。最受欢迎的模块之一可能是RxJava的CallAdapter，它将返回 <code>Observable&lt;T&gt;</code>。要使用它，必须添加以下两个依赖项。</p>
+<div class="codehilite"><pre>    compile &#39;com.squareup.retrofit:adapter-rxjava:2.0.0-beta2&#39;
+    compile &#39;io.reactivex:rxandroid:1.0.1&#39;
+</pre></div>
+
+
+<p>同步Gradle并添加 <code>addCallAdapterFactory</code>到Retrofit Builder的链式调度中，如下所示：</p>
+<div class="codehilite"><pre>        Retrofit retrofit = new Retrofit.Builder()
+                .baseUrl(&quot;http://api.nuuneoi.com/base/&quot;)
+                .addConverterFactory(GsonConverterFactory.create())
+                .addCallAdapterFactory(RxJavaCallAdapterFactory.create())
+                .build();
+</pre></div>
+
+
+<p>你的Service接口现在可以就返回  <code>Observable&lt;T&gt;</code>了！</p>
+<div class="codehilite"><pre>public interface APIService {
+
+    @POST(&quot;list&quot;)
+    Call&lt;DessertItemCollectionDao&gt; loadDessertList();
+
+    @POST(&quot;list&quot;)
+    Observable&lt;DessertItemCollectionDao&gt; loadDessertListRx();
+
+}
+</pre></div>
+
+
+<p>您可以用和RxJava完全相同的方式来使用它。另外，如果要让订阅部分的代码在主线程上调用，<code>observeOn(AndroidSchedulers.mainThread())</code> 需要添加到Observable的链式调度中。</p>
+<div class="codehilite"><pre>        Observable&lt;DessertItemCollectionDao&gt; observable = service.loadDessertListRx();
+
+        observable.subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+            .unsubscribeOn(Schedulers.io())
+            .subscribe(new Subscriber&lt;DessertItemCollectionDao&gt;() {
+                @Override
+                public void onCompleted() {
+                    Toast.makeText(getApplicationContext(),
+                            &quot;Completed&quot;,
+                            Toast.LENGTH_SHORT)
+                        .show();
+                }
+
+                @Override
+                public void onError(Throwable e) {
+                    Toast.makeText(getApplicationContext(),
+                            e.getMessage(),
+                            Toast.LENGTH_SHORT)
+                        .show();
+                }
+
+                @Override
+                public void onNext(DessertItemCollectionDao dessertItemCollectionDao) {
+                    Toast.makeText(getApplicationContext(),
+                            dessertItemCollectionDao.getData().get(0).getName(),
+                            Toast.LENGTH_SHORT)
+                        .show();
+                }
+            });
+</pre></div>
+
+
+<p>完成了！我相信RxJava的粉丝是非常满意的这个变化的= D
+<br/></p>
+<h3 id="_3">结论</h3>
+<p>还有一些其他变化，您可以查看<a href="https://github.com/square/retrofit/blob/master/CHANGELOG.md">更改日志</a>  了解更多信息。</p>
+<p>请注意，Retrofit 1.9官方文档已从Square github网站中删除。我建议你现在开始学习Retrofit 2.0，并考虑在不久的将来升级到最新版本。= D</p>
+        </article>
+      </div>
+    </div>
+  </body>
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"] ],
+          displayMath: [ ['$$', '$$'], ["\\[", "\\]"] ],
+          processEscapes: true
+        },
+        TeX: {
+          equationNumbers: {
+            autoNumber: 'AMS'
+          }
+        },
+        "HTML-CSS": {
+          imageFont: null
+        }
+      });
+  </script>
+  <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/2.1-latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</html>
