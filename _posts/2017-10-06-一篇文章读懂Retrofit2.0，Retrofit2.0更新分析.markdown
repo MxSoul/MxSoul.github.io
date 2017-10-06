@@ -1,0 +1,397 @@
+---
+layout:     post
+title:      "一篇文章读懂Retrofit2.0【译】"
+subtitle:   "Retrofit2.0更新分析"
+date:       2017-10-06 13:19:00
+author:     "Max"
+header-img: "img/post-bg-retrofit.jpg"
+tags:
+    - Android
+    - 网络
+    - 翻译
+---
+
+#一篇文章读懂Retrofit2.0，Retrofit2.0更新分析
+
+>该文章为，国外博客的翻译，英文比较烂（主要靠Google），可能有很多翻译得不到位的地方，主要还是想给自己做一个笔记。
+>
+>原文连接
+[https://inthecheesefactory.com/blog/retrofit-2.0/en](https://inthecheesefactory.com/blog/retrofit-2.0/en)
+
+由于其简单性和与其他网络框架相比的卓越性能，Retrofit是Android的最流行的HTTP客户端库之一。
+<br/>
+
+无论如何，它的弱点是在Retrofit 1.x中，没有任何直接的方式取消正在进行的网络请求。如果你想这样做，你必须在Thread上调用它，并手动杀死该Thread，这是一种很难管理的方式。
+
+Square几年前承诺，此功能将在Retrofit 2.0上推出，但过去几年，仍然没有更新的新闻。
+
+直到上周（译者注：该博客发表时间为 2015-11-06 12:33），Retrofit 2.0才刚刚通过了Beta 1的发布阶段，并已被公开发布给大家。尝试之后，我必须说，我对它的新模式和新功能印象深刻。有很多往好的方向的变化。我将在本文中描述。让我们开始吧 ！
+
+###新版本导入`
+如果要将Retrofit 2.0导入到项目中，请将此行添加到你 `build.gradle`的`dependencies`部分。
+
+```
+compile 'com.squareup.retrofit2:retrofit:2.0.0-beta4'
+
+截至2017-10-3 最新版为：
+compile 'com.squareup.retrofit2:retrofit:2.3.0'
+```
+
+同步你的 gradle 文件，你现在就可以使用Retrofit 2.0了  =）
+
+正如你所看到的，Retrofit 2包名称与以前的版本不同。现在是  `com.squareup.retrofit2`
+<br/>
+
+###新的Service声明方式，同步和异步方法不再被区分。
+
+关于Retrofit 1.9中的Service接口声明，如果要声明一个同步请求，则必须像这样声明：
+```
+/* Synchronous in Retrofit 1.9 */
+
+public interface APIService {
+      @POST("/list") 
+      Repo loadRepo();
+}
+```
+如果你需要一个异步请求，如下所示：
+```
+/* Asynchronous in Retrofit 1.9 */
+
+public interface APIService {
+      @POST("/list")
+      void loadRepo(Callback<Repo> cb);
+}
+```
+但是在**Retrofit 2.0**中，它更简单，因为你只能使用单个模式进行声明。
+```
+import retrofit.Call;
+
+/* Retrofit 2.0 */
+
+public interface APIService {
+      @POST("/list")
+      Call<Repo> loadRepo();
+}
+```
+调用创建Service的方式也改变为与[OkHttp](http://square.github.io/okhttp/)相同的模式。
+要调用是同步请求，只需调用`execute`
+要调用是同步请求，只需调用`enqueue`
+
+**同步请求**
+```
+// Synchronous Call in Retrofit 2.0
+Call<Repo> call = service.loadRepo();
+Repo repo = call.execute();
+```
+上面的源代码将阻塞线程，所以你不能在Android的主线程中调用它，否则你将面临`NetworkOnMainThreadException`。如果你想调用`execute`方法，你必须在后台线程上执行。
+
+**异步请求**
+```
+// Asynchronous Call in Retrofit 2.0
+
+Call<Repo> call = service.loadRepo();
+call.enqueue(new Callback<Repo>() { 
+      @Override
+      public void onResponse(Response<Repo> response) {
+            // Get result Repo from response.body()
+      }
+
+      @Override
+      public void onFailure(Throwable t) {
+
+      }
+});
+```
+
+上述代码将在后台线程中发出请求，并将结果以Object的形式取回，你可以通过`response.body()`方法从response中提取结果。
+
+请注意：`onResponse`和`onFailure`将会在**主线程**中调用。
+
+我建议你使用`enqueue`，因为它最适合Android。
+
+###取消正在进行的事务
+Service声明方式转变`Call`的原因，是使得正在进行的事务能够被取消。若要取消事务，只需调用`call.cancel()`
+```
+call.cancel();
+```
+调用该方法之后，事务将会很快的被取消。很轻松吧？= D
+<br/>
+
+###在新Service的构建中，转换器（Converter）现在被从Retrofit包中去除
+
+在Retrofit 1.9中，GsonConverter包含在包中，并在`RestAdapter`创建时自动初始化。因此，服务器返回的json将自动解析为定义的 数据访问对象  （DAO）。
+
+但在Retrofit 2.0中，转换器（Converter）**不再**包含在包中。你需要自己添加一个转换器（Converter），否则Retrofit将只能接受String的结果。因此，Retrofit 2.0不再依赖于Gson。
+
+如果要接受json结果并将其解析成DAO，则必须将Gson Converter作为单独的依赖项。
+```
+compile 'com.squareup.retrofit:converter-gson:2.0.0-beta2'
+```
+
+并通过`addConverterFactory`将其添加。请注意，`RestAdapter`现在也重命名为`Retrofit`。
+```
+Retrofit retrofit = new Retrofit.Builder()
+      .baseUrl("http://api.nuuneoi.com/base/")
+      .addConverterFactory(GsonConverterFactory.create())
+      .build();
+
+service = retrofit.create(APIService.class);
+```
+以下是Square提供的官方转换器（Converter）模块列表。可以从中选择一个最适合你要求的。
+
+**Gson：** com.squareup.retrofit：converter-gson 
+**Jackson：** com.squareup.retrofit：converter-jackson 
+**Moshi：** com.squareup.retrofit：converter-moshi 
+**Protobuf：** com.squareup.retrofit：converter-protobuf 
+**Wire：** com.squareup.retrofit:converter-wire
+**Simple XML：** com.squareup.retrofit：converter-simplexml
+
+你还可以通过实现[Converter.Factory](https://github.com/square/retrofit/blob/master/retrofit/src/main/java/retrofit/Converter.java)接口，创建一个自定义转换器（Converter）。
+
+我支持这种新模式。它使得Retrofit更专注于处理网络连接（原文：It makes Retrofit more clear what it actually does.）。
+
+###自定义Gson对象
+如果你需要在json中调整某些格式，例如Date Format。你可以通过创建一个Gson对象，并将其作为参数传递给 `GsonConverterFactory.create()`
+```
+        Gson gson = new GsonBuilder()
+                .setDateFormat("yyyy-MM-dd'T'HH:mm:ssZ")
+                .create();
+
+        Retrofit retrofit = new Retrofit.Builder()
+                .baseUrl("http://api.nuuneoi.com/base/")
+                .addConverterFactory(GsonConverterFactory.create(gson))
+                .build();
+
+        service = retrofit.create(APIService.class);
+```
+完成。
+<br/>
+
+###新的URL解析方式。与<a href>的相同
+
+Retrofit 2.0附带了新的URL解析方式。Base URL 和 @Url 不只是简单地组合在一起，而是以和`<a href="...">`相同的方式进行解析。
+
+请查看下面的示例以进行说明。
+
+![](http://upload-images.jianshu.io/upload_images/4300256-a29282998ea76ce7.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+![](http://upload-images.jianshu.io/upload_images/4300256-f229e6158fdfc994.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+![](http://upload-images.jianshu.io/upload_images/4300256-895b879caa349621.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+以下是我对Retrofit 2.0中新的URL声明模式的建议：
+- **Base URL**：始终以 ` / ` 结尾
+
+- **@Url**：**不要**以 ` / ` 开始
+
+例如
+```
+public interface APIService {
+      
+      @POST("user/list") 
+      Call<Users> loadUsers();
+
+}
+
+public void doSomething() { 
+      Retrofit retrofit = new Retrofit.Builder()
+            .baseUrl("http://api.nuuneoi.com/base/")
+            .addConverterFactory(GsonConverterFactory.create()) 
+            .build();
+
+      APIService service = retrofit.create(APIService.class);
+}
+```
+
+上面代码中的`loadUsers()`将从`http://api.nuuneoi.com/base/user/list`获取数据 
+
+此外，在Retrofit 2.0中，我们还可以在`@Url`中声明一个完整的URL：
+
+```
+public interface APIService {
+
+      @POST("http://api.nuuneoi.com/special/user/list")
+      Call<Users> loadSpecialUsers();
+
+}
+```
+
+在这种情况下，Base URL将被忽略。
+
+可以看到，URL解析有重大变化。它与以前的版本完全不同。如果要将现有代码升级到Retrofit 2.0，请不要忘记修复这些URL部分的代码。
+
+###OkHttp现在为必用的
+OkHttp在“Retrofit 1.9”中为可选项。如果要让Retrofit使用OkHttp作为HTTP连接接口，那么你必须自己手动将`okhttp`添加至依赖项。
+
+但是在Retrofit 2.0中，必须使用OkHttp，并且会自动添加为依赖。下面的代码是从Retrofit 2.0的pom文件中获取的。你没有必要做任何事情。
+```
+  <dependencies>
+    <dependency>
+      <groupId>com.squareup.okhttp</groupId>
+      <artifactId>okhttp</artifactId>
+    </dependency>
+
+    ...
+  </dependencies>
+```
+在Retrofit 2.0中自动使用Okhttp作为HTTP接口，目的是使用OkHttp的`Call`方式，将网络请求变成上文中描述的那样。
+<br/>
+
+###即使返回值有问题（主要指无法解析），onResponse仍然会被调用
+
+在Retrofit 1.9中，如果获取的返回值无法解析到定义好的对象之中，`failure`将被调用。但是在Retrofit 2.0中，无论返回值是否能够解析，`onResponse`都会被调用。但是在结果无法解析为Object的情况下，`response.body()`将返回为null。**注意：不要忘记处理这一种情况**。
+
+如果返回值有问题，例如404 Not Found。`onResponse`也将被调用。您可以`response.errorBody().string()`中检索错误信息
+
+![](http://upload-images.jianshu.io/upload_images/4300256-dd3bca996fac6ecc.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+Response / Failure的逻辑与Retrofit 1.9完全不同。如果你决定将代码升级到Retrofit 2.0，请小心处理这些情况。
+<br/>
+
+###缺少INTERNET权限会导致抛出SecurityException异常
+
+在Retrofit 1.9中，如果您忘记在`AndroidManifest.xml`文件中添加 INTERNET
+ 权限。异步请求将立即进入`failure`的回调函数中，并带着错误信息：**PERMISSION DENIED**。不会额外抛出异常。
+
+但在Retrofit2.0之中，当你调用`call.enqueue`或者`call.execute`时，会立刻抛出`SecurityException`。如果你没有使用try-catch来处理该情况，很可能导致应用崩溃。
+
+![](http://upload-images.jianshu.io/upload_images/4300256-2df9b98f46919aac.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+这种情况和，当手动调用`HttpURLConnection`是一样的
+无论如何，这个问题不是一件大事，因为只要把INTERNET权限添加到AndroidManifest.xml之中，这个问题就不存在了。
+<br/>
+
+###使用OkHttp的拦截器
+
+在Retrofit 1.9中，您可以使用 `RequestInterceptor`拦截请求，但是由于HTTP连接层已被移动到 OkHttp，所以在Retrofit 2.0上已经不能这么做了。
+
+因此，我们必须使用 **OkHttp** 的`Interceptor`。首先，你必须像这样创建一个`OkHttpClient`对象并创建一个拦截器
+
+```
+OkHttpClient client = new OkHttpClient();
+client.interceptors().add(new Interceptor() {
+      @Override
+      public Response intercept(Chain chain) throws IOException {
+            Response response = chain.proceed(chain.request());
+            
+            // Do anything with response here
+
+            return response; 
+      }
+});
+```
+
+并将创建好的`client`传入Retrofit的Builder的链式调度之中。
+
+```
+Retrofit retrofit = new Retrofit.Builder()
+      .baseUrl("http://api.nuuneoi.com/base/")
+      .addConverterFactory(GsonConverterFactory.create())
+      .client(client)
+      .build();
+```
+
+That's all.
+
+要了解OkHttp拦截器的更多信息，请浏览 [OkHttp拦截器](https://github.com/square/okhttp/wiki/Interceptors)。
+附：感谢[汉之风云](http://www.jianshu.com/u/18fcd0aab3d7)的[中文翻译版](http://www.jianshu.com/p/2710ed1e6b48)
+<br/>
+
+###证书锁定(Certificate Pinning)
+>相关知识
+[移动安全之Certificate Pinning](http://blog.csdn.net/ptwh0608/article/details/44155255)
+
+与拦截器一样，如果要使连接应用的证书锁定，也需要先创建OkHttpClient实例。以下是示例代码段。
+首先，定义具有证书锁定信息的OkHttpClient实例：
+```
+OkHttpClient client = new OkHttpClient.Builder()
+        .certificatePinner(new CertificatePinner.Builder()
+                .add("publicobject.com", "sha1/DmxUShsZuNiqPQsX2Oi9uv2sCnw=")
+                .add("publicobject.com", "sha1/SXxoaOSEzPC6BgGmxAt/EAcsajw=")
+                .add("publicobject.com", "sha1/blhOM3W9V/bVQhsWAcLYwPU6n24=")
+                .add("publicobject.com", "sha1/T5x9IXmcrQ7YuQxXnxoCmeeQ84c=")
+                .build())
+        .build();
+```
+
+在Retrofit的Builder的链式调度之中，传入刚创建好的 OkhttpClient。
+```
+Retrofit retrofit = new Retrofit.Builder()
+        .baseUrl("http://api.nuuneoi.com/base/")
+        .addConverterFactory(GsonConverterFactory.create())
+        .client(client)
+        .build();
+```
+
+有关证书锁定的sha1哈希算法的更多信息，Google会帮助你（必应国际版也挺好用）
+<br/>
+
+###RxJava与CallAdapter集成
+除了以`Call<T>`的形式声明接口之外，我们也可以声明自己的类型，例如  `MyCall<T>`。这些方式被称为“ `CallAdapter`”，它可以在Retrofit 2.0上使用
+
+有一些可以从Retrofit团队获得的即用型CallAdapter模块。最受欢迎的模块之一可能是RxJava的CallAdapter，它将返回 `Observable<T>`。要使用它，必须添加以下两个依赖项。
+```
+    compile 'com.squareup.retrofit:adapter-rxjava:2.0.0-beta2'
+    compile 'io.reactivex:rxandroid:1.0.1'
+```
+
+同步Gradle并添加 `addCallAdapterFactory`到Retrofit Builder的链式调度中，如下所示：
+```
+        Retrofit retrofit = new Retrofit.Builder()
+                .baseUrl("http://api.nuuneoi.com/base/")
+                .addConverterFactory(GsonConverterFactory.create())
+                .addCallAdapterFactory(RxJavaCallAdapterFactory.create())
+                .build();
+```
+你的Service接口现在可以就返回  `Observable<T>`了！
+
+```
+public interface APIService {
+
+    @POST("list")
+    Call<DessertItemCollectionDao> loadDessertList();
+
+    @POST("list")
+    Observable<DessertItemCollectionDao> loadDessertListRx();
+
+}
+```
+
+您可以用和RxJava完全相同的方式来使用它。另外，如果要让订阅部分的代码在主线程上调用，`observeOn(AndroidSchedulers.mainThread())` 需要添加到Observable的链式调度中。
+```
+        Observable<DessertItemCollectionDao> observable = service.loadDessertListRx();
+
+        observable.subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+            .unsubscribeOn(Schedulers.io())
+            .subscribe(new Subscriber<DessertItemCollectionDao>() {
+                @Override
+                public void onCompleted() {
+                    Toast.makeText(getApplicationContext(),
+                            "Completed",
+                            Toast.LENGTH_SHORT)
+                        .show();
+                }
+
+                @Override
+                public void onError(Throwable e) {
+                    Toast.makeText(getApplicationContext(),
+                            e.getMessage(),
+                            Toast.LENGTH_SHORT)
+                        .show();
+                }
+
+                @Override
+                public void onNext(DessertItemCollectionDao dessertItemCollectionDao) {
+                    Toast.makeText(getApplicationContext(),
+                            dessertItemCollectionDao.getData().get(0).getName(),
+                            Toast.LENGTH_SHORT)
+                        .show();
+                }
+            });
+```
+完成了！我相信RxJava的粉丝是非常满意的这个变化的= D
+<br/>
+
+###结论
+
+还有一些其他变化，您可以查看[更改日志](https://github.com/square/retrofit/blob/master/CHANGELOG.md)  了解更多信息。
+
+请注意，Retrofit 1.9官方文档已从Square github网站中删除。我建议你现在开始学习Retrofit 2.0，并考虑在不久的将来升级到最新版本。= D
