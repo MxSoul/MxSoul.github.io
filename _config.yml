@@ -12,11 +12,11 @@ url: "https://MxSoul.github.io/"              # your host, for absolute URL
 
 # SNS settings
 RSS: true
-#weibo_username:     huxpro
-#zhihu_username:     huxpro
+weibo_username:     huxpro
+zhihu_username:     huxpro
 github_username:    MxSoul
-#twitter_username:  huxpro
-#facebook_username:  huxpro
+twitter_username:  huxpro
+facebook_username:  huxpro
 
 
 
