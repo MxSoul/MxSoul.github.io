@@ -11,13 +11,13 @@ url: "https://MxSoul.github.io/"              # your host, for absolute URL
 
 
 # SNS settings
-#RSS: true
+RSS: false
 #weibo_username:     huxpro
 #zhihu_username:     huxpro
 github_username:    MxSoul
 #twitter_username:  huxpro
 #facebook_username:  huxpro
-
+jianshu_username:   e71990ada2fd
 
 
 # Build settings
@@ -68,7 +68,7 @@ ga_domain: huangxuan.me
 
 # Sidebar settings
 sidebar: true                           # whether or not using Sidebar.
-sidebar-about-description: "非专业初级程序员"
+sidebar-about-description: "不定时更新一些自己的经验，分享一些优秀的博客"
 sidebar-avatar: /img/avatar-max.jpg      # use absolute URL, seeing it's used in both `/` and `/about/`
 
 
