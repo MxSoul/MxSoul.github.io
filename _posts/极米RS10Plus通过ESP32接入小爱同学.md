@@ -1,0 +1,414 @@
+## 写在最前
+感谢大佬们的无私分享
+ - [极客侠ESP32教程](https://docs.geeksman.com/esp32/Arduino/02.esp32-arduino-install.html)
+- [ 极米投影仪插件完美支持开机！](https://bbs.hassbian.com/thread-16308-1-1.html)
+	- 一开始参考的方案，但是由于我的HA运行在虚拟机中无法使用蓝牙，所以无法使用该方案。建议使用树莓派等设备安装HA的小伙伴直接使用这个方案
+- [ESP32完美实现小爱控制极米投影仪蓝牙开机及Wifi关机-更新完](https://bbs.hassbian.com/thread-23894-1-1.html)
+	- 本文基本参考的这篇文章进行操作，对于部分大佬没有提到的基础和细节进行补全
+ 
+本文的所有步骤就是raychao大大的思路
+1、Wifi接入巴法，实现米家控制；
+2、蓝牙广播特定manufacturer data实现完美蓝牙开机；
+3、Wifi  UDP广播实现复杂指令的完美快速关机。
+## 开发环境搭建
+### 下载Arduino 
+[Arduino官网地址](https://link.wtturl.cn/?target=https://www.arduino.cc/en/software&scene=im&aid=497858&lang=zh)
+### 安装Arduino
+![在这里插入图片描述](https://i-blog.csdnimg.cn/direct/46a324c603d84958948c1ee02d4a1568.png)
+安装过程没什么好说的，一直下一步就好。安装完成后，可以在File->Preferences中设置语言。
+在红框部分其他开发板管理地址中增加下方的链接，这样才能在后续的操作中找到ESP32 
+> https://espressif.github.io/arduino-esp32/package_esp32_dev_index_cn.json
+
+### 安装ESP32开发板
+![在这里插入图片描述](https://i-blog.csdnimg.cn/direct/86e785504b7941a7a357cb1fb56257a7.png)
+
+选择 工具 菜单中的 开发板 -> 开发板管理器，搜索ESP32，选择红框中的by Espressif Systems的开发板，点击安装。因为我们之前添加的源包含了国内镜像，所以推荐在版本下拉菜单中找到带-cn的版本
+
+### 选择适配自己板子的环境
+![在这里插入图片描述](https://i-blog.csdnimg.cn/direct/82b7822ca3704542856645e9ca8cad8a.png)
+![在这里插入图片描述](https://i-blog.csdnimg.cn/direct/5691cb7c7877441e8e32f3aa766c1a50.png)
+合宙系的板子（淘宝买的板子上印有LuatOS的应该都是这个）请选择 **AirM2M_CORE_ESP32C3**
+其它的板子我不知道该怎么选，可以自行查阅相关资料。如果后续编译报了以下错误，就是板子没选对
+
+```bash
+E (25) flash_parts: partition 0 invalid magic number 0xcecd
+E (26) boot: Failed to verify partition table
+E (26) boot: load partition table error!
+```
+
+## 主程序代码
+代码主要来自raychao大大的分享
+[ESP32完美实现小爱控制极米投影仪蓝牙开机及Wifi关机-更新完](https://bbs.hassbian.com/thread-23894-1-1.html)
+### 添加依赖库
+代码还依赖了好几个基础库，直接跑是跑不起来的，我们需要安装一些基础库
+
+一、安装ESP32BLEAdvertise.h对应的库（来自 ESP32BLESimpleAdvertiser）
+这个头文件来自peterk54/ESP32BLESimpleAdvertiser项目，需手动下载安装：
+1. 下载库文件
+	- 访问 GitHub 仓库：https://github.com/peterk54/ESP32BLESimpleAdvertiser
+	- 点击右上角「Code」→「Download ZIP」，获取库的压缩包。
+2. 在 Arduino IDE 中安装
+	- 打开 Arduino IDE，点击「项目」→「导入库」→「添加.ZIP 库...」
+	- 选择刚下载的ESP32BLESimpleAdvertiser-main.zip文件
+	- 等待安装完成，IDE 会提示 “库已添加到您的库中”
+
+二、安装PubSubClient.h对应的巴法云示例库
+你的代码中使用的PubSubClient.h来自巴法云提供的示例包，需使用其指定版本：
+1. 下载巴法云 MQTT 库
+	- 访问巴法云提供的链接：https://cloud.bemfa.com/zip/8266/Bemfa_MQTT.zip
+下载后解压，会得到包含PubSubClient库的文件夹。
+2. 手动放置库文件
+	- 打开 Arduino 的库目录（可在 Arduino IDE 中通过「文件」→「首选项」查看「项目文件夹位置」，库目录通常在Documents/Arduino/libraries）
+	- 将解压后得到的PubSubClient文件夹复制到上述库目录中（注意：如果之前安装过其他版本的PubSubClient，建议先删除，避免版本冲突）
+### ESP32C3
+在原帖的代码基础上，修改了蓝牙库
+```cpp
+#include <WiFi.h>
+#include "PubSubClient.h"
+#include <WiFiUdp.h>
+#include <BLEDevice.h>
+#include <BLEServer.h>
+#include <BLEAdvertising.h>
+
+//********************需要修改的部分*******************//
+const char* ssid = "XXXX";           // 你的WiFi名称
+const char* password = "XXXXXXXX";   // 你的WiFi密码
+#define ID_MQTT  "XXXXXXXXXXXXXX"    // 巴法云用户私钥
+const char* topic = "XXXXXXXXXXXX";  // 巴法云主题名称
+const int B_led = 2;                 // LED引脚（ESP32-C3的GPIO2）
+bool Turned = false;
+//**************************************************//
+
+const char* mqtt_server = "bemfa.com";
+const int mqtt_server_port = 9501;
+WiFiClient espClient;
+PubSubClient client(espClient);
+
+// BLE相关配置
+BLEServer* pServer = nullptr;
+BLEAdvertising* pAdvertising = nullptr;
+const char* BLE_DEVICE_NAME = "ESP32-C3-Proj";
+
+// UDP配置
+WiFiUDP Udp;
+IPAddress remote_IP(192, 168, 3, 27);
+unsigned int remoteUdpPort = 16735;
+unsigned int remoteUdpPortFZ = 16750;
+const char* Keyword = "KEYPRESSES:116";
+const char* KeywordFZ = "{\"action\":20000,\"controlCmd\":{\"delayTime\":0,\"mode\":6,\"time\":0,\"type\":0},\"msgid\":\"2\"}";
+
+// 函数声明
+void turnOn();
+void turnOff();
+void setup_wifi();
+void callback(char* topic, byte* payload, unsigned int length);
+void reconnect();
+void initBLE();
+
+void setup_wifi() {
+  delay(10);
+  Serial.println();
+  Serial.print("Connecting to ");
+  Serial.println(ssid);
+  WiFi.begin(ssid, password);
+  
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+  
+  Serial.println("");
+  Serial.println("WiFi connected");
+  Serial.println("IP address: ");
+  Serial.println(WiFi.localIP());
+}
+
+void callback(char* topic, byte* payload, unsigned int length) {
+  Serial.print("Topic:");
+  Serial.println(topic);
+  String msg = "";
+  for (int i = 0; i < length; i++) {
+    msg += (char)payload[i];
+  }
+  Serial.print("Msg:");
+  Serial.println(msg);
+  
+  if (msg == "on") {
+    turnOn();
+    Turned = true;
+  } else if (msg == "off") {
+    turnOff();
+    Turned = false;
+  }
+}
+
+void reconnect() {
+  while (!client.connected()) {
+    Serial.print("Attempting MQTT connection...");
+    if (client.connect(ID_MQTT)) {
+      Serial.println("connected");
+      client.subscribe(topic);
+    } else {
+      Serial.print("failed, rc=");
+      Serial.print(client.state());
+      Serial.println(" try again in 5 seconds");
+      delay(5000);
+    }
+  }
+}
+
+// 初始化BLE广播（包含自定义厂商数据）
+void initBLE() {
+  BLEDevice::init(BLE_DEVICE_NAME);
+  pServer = BLEDevice::createServer();
+  pAdvertising = pServer->getAdvertising();
+  
+  BLEAdvertisementData advData;
+  
+  // 厂商特定数据配置
+  // 格式：[公司代码(2字节)] + [自定义数据(n字节)]
+  uint8_t manufacturerData[] = {
+    0x46, 0x00,               // 公司代码 Company Code: 0x0046（小端模式存储）
+    0x63, 0xC1, 0xA5, 0x10,   // 自定义数据部分
+    0x39, 0x54, 0x38, 0xFF,
+    0xFF, 0xFF, 0x30, 0x43,
+    0x52, 0x4B, 0x54, 0x4D
+  };
+  
+  // 设置厂商数据（转换为Arduino String类型）
+  advData.setManufacturerData(String((char*)manufacturerData, sizeof(manufacturerData)));
+  advData.setName(BLE_DEVICE_NAME);  // 设备名称
+  
+  pAdvertising->setAdvertisementData(advData);
+  pAdvertising->setScanResponse(false);
+  pAdvertising->setMinInterval(128);
+  pAdvertising->setMaxInterval(256);
+}
+
+void setup() {
+  pinMode(B_led, OUTPUT);
+  digitalWrite(B_led, LOW);
+  Serial.begin(115200);
+  
+  setup_wifi();
+  client.setServer(mqtt_server, mqtt_server_port);
+  client.setCallback(callback);
+  
+  initBLE();
+}
+
+void loop() {
+  if (!client.connected()) {
+    reconnect();
+  }
+  client.loop();
+  
+  if (Turned) {
+    if (!pAdvertising->isAdvertising()) {
+      pAdvertising->start();
+      Serial.println("BLE广播已启动");
+    }
+  } else {
+    if (pAdvertising->isAdvertising()) {
+      pAdvertising->stop();
+      Serial.println("BLE广播已停止");
+    }
+  }
+  delay(100);
+}
+
+void turnOn() {
+  digitalWrite(B_led, HIGH);
+  Serial.println("投影已打开");
+}
+
+void turnOff() {
+  digitalWrite(B_led, LOW);
+  Udp.beginPacket(remote_IP, remoteUdpPortFZ);
+  Udp.print(KeywordFZ);
+  Udp.endPacket();
+  Serial.println("投影已关闭，已发送关机指令");
+}
+```
+
+### ESP32
+原帖的代码，和ESP32C3主要差别在于蓝牙库不同
+```cpp
+#include <WiFi.h>               //默认，加载WIFI头文件
+#include "PubSubClient.h"       //默认，加载MQTT库文件
+#include <WiFiUdp.h>            //引用以使用UDP
+#include "ESP32BLEAdvertise.h"  //引用蓝牙广播头文件
+
+//********************需要修改的部分*******************//
+const char* ssid = "XXXX";           //修改，你的路由去WIFI名字
+const char* password = "XXXXXXXX";     //你的WIFI密码
+#define ID_MQTT  "XXXXXXXXXXXXXX"     //用户私钥，控制台获取
+const char* topic = "XXXXXXXXXXXX";        //主题名字，可在巴法云控制台自行创建，名称随意
+const int B_led = 2;       //单片机LED引脚值，D系列是NodeMcu引脚命名方式，其他esp8266型号将D2改为自己的引脚
+bool Turned = false;;
+//**************************************************//
+
+const char* mqtt_server = "bemfa.com";  //默认，MQTT服务器
+const int mqtt_server_port = 9501;      //默认，MQTT服务器
+WiFiClient espClient;
+PubSubClient client(espClient);
+SimpleBLE bleadv;
+
+//灯光函数及引脚定义
+void turnOn();
+void turnOff();
+
+//********************UDP按键信息关机*****************//
+WiFiUDP Udp;
+IPAddress remote_IP(192, 168, 3, 27);// 自定义远程监 IP 地址
+unsigned int remoteUdpPort = 16735;  // 简单指令端口
+unsigned int remoteUdpPortFZ = 16750;  // 复杂令端口
+const char* Keyword = "KEYPRESSES:116"; //简单指令：关机
+const char* KeywordFZ = {"{"action":20000,"controlCmd":{"delayTime":0,"mode":6,"time":0,"type":0},"msgid":"2"}"}; //复杂指令：快速关机
+//**************************************************//
+
+void setup_wifi() {
+  delay(10);
+  Serial.println();
+  Serial.print("Connecting to ");
+  Serial.println(ssid);
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+
+  Serial.println("");
+  Serial.println("WiFi connected");
+  Serial.println("IP address: ");
+  Serial.println(WiFi.localIP());
+
+}
+
+void callback(char* topic, byte* payload, unsigned int length) {
+  Serial.print("Topic:");
+  Serial.println(topic);
+  String msg = "";
+  for (int i = 0; i < length; i++) {
+    msg += (char)payload[i];
+  }
+  Serial.print("Msg:");
+  Serial.println(msg);
+  if (msg == "on") {//如果接收字符on，亮灯并打开投影
+    turnOn();//开启函数
+    Turned = true;
+  } else if (msg == "off") {//如果接收字符off，关灯并关闭投影
+    turnOff();//关闭函数
+    Turned = false;
+  }
+  msg = "";
+}
+
+void reconnect() {
+  // Loop until we're reconnected
+  while (!client.connected()) {
+    Serial.print("Attempting MQTT connection...");
+    // Attempt to connect
+    if (client.connect(ID_MQTT)) {
+      Serial.println("connected");
+      Serial.print("subscribe:");
+      Serial.println(topic);
+      //订阅主题，如果需要订阅多个主题，可发送多条订阅指令client.subscribe(topic2);client.subscribe(topic3);
+      client.subscribe(topic);
+    } else {
+      Serial.print("failed, rc=");
+      Serial.print(client.state());
+      Serial.println(" try again in 5 seconds");
+      // Wait 5 seconds before retrying
+      delay(5000);
+    }
+  }
+}
+
+void setup() {
+  pinMode(B_led, OUTPUT); //设置引脚为输出模式
+  digitalWrite(B_led, LOW);//默认引脚上电高电平
+  Serial.begin(115200);     //设置波特率115200
+  setup_wifi();           //设置wifi的函数，连接wifi
+  client.setServer(mqtt_server, mqtt_server_port);//设置mqtt服务器
+  client.setCallback(callback); //mqtt消息处理
+}
+
+void loop() {
+  int i = 1;
+  if (!client.connected()) {
+    reconnect();
+  }
+  else
+  {
+    if (Turned)
+    {
+      bleadv.begin();//初始化蓝牙名
+      uint8_t data[] = {0x46, 0x00, 0x46, 0x17, 0x03, 0xef, 0xb2, 0x24, 0x40, 0xff, 0xff, 0xff, 0x30, 0x43, 0x52, 0x4b, 0x54, 0x4d}; //蓝牙广播内容
+      bleadv.advertise(data, 18);
+      delay(5000);
+    }
+    else
+    {
+      bleadv.end();
+    }
+  }
+  client.loop();
+}
+
+//打开投影
+void turnOn() {
+  digitalWrite(B_led, HIGH);
+}
+
+//关闭投影
+void turnOff() {
+  digitalWrite(B_led, LOW);
+  Udp.beginPacket(remote_IP, remoteUdpPortFZ);//配置远端ip地址和端口
+  String str_cnt(KeywordFZ);
+  Udp.print(str_cnt);//把数据写入发送缓冲区
+  Udp.endPacket();//发送数据
+}
+```
+
+## 相关配置获取
+### 蓝牙指令获取
+这块大多数教程都使用App Store下载 [bluetooth smart scanner](https://apps.apple.com/us/app/bluetooth-smart-scanner/id509978131) app。但是首先这个app是个美服的app，其次是这个app好像下架了，总之我搜索不到了。
+我推荐使用Android的[Si Connect(需要科技)](https://apkpure.com/cn/simplicity-connect/com.siliconlabs.bledemo)
+当然也不一定要用这个，只需要一个能过滤Mac地址的蓝牙嗅探app就可以，应用市场搜BLE应该可以找到很多。
+因为家里设备非常多，所以很难捕获到这个广播，最终发现一个取巧的办法：
+
+ 1. 极米设置->蓝牙->极米遥控器
+ 2. 记录下遥控器的MAC地址
+ 3. 蓝牙嗅探APP中使用MAC地址过滤设备
+ 4. 获取Manufacturer Specific Data
+ 
+获取到广播值后需要把loop()函数中的对应16进制值替换为自己的，这边提供一份RS10Plus的值，这个值有可能同型号是一样的，但是最好还是自己获取一遍
+
+```c
+  // 厂商特定数据配置
+  // 格式：[公司代码(2字节)] + [自定义数据(n字节)]
+  // 对应的值为 Ox63C1A510395438FFFFFF3043524B544D
+  uint8_t manufacturerData[] = {
+    0x46, 0x00,               // 公司代码 Company Code: 0x0046（小端模式存储）
+    0x63, 0xC1, 0xA5, 0x10,   // 自定义数据部分
+    0x39, 0x54, 0x38, 0xFF,
+    0xFF, 0xFF, 0x30, 0x43,
+    0x52, 0x4B, 0x54, 0x4D
+  };
+```
+
+![在这里插入图片描述](https://i-blog.csdnimg.cn/direct/6e944028866b444f8ff475b9be824bac.jpeg) ![在这里插入图片描述](https://i-blog.csdnimg.cn/direct/dd1b3b5f48fc4b10826ced73e34976c2.jpeg)![在这里插入图片描述](https://i-blog.csdnimg.cn/direct/61bf7c393cd64cb4a503222848b3a680.jpeg)
+### 巴法云配置
+[巴发法云控制台](https://cloud.bemfa.com/tcp/devicemqtt.html)
+![在这里插入图片描述](https://i-blog.csdnimg.cn/direct/93beac6ecd39460face79127330714b0.png)
+登录后新建一个主题，主题名字英文部分无所谓可以随便取，但是英文之后需要跟一个数字，代表不同的设备类型，具体数字和类型的映射关系可以参考[巴法云的文档](https://cloud.bemfa.com/docs/src/speaker_mi.html)
+
+
+
+
+
+
+
+
+
